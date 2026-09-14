@@ -24,9 +24,12 @@ jobs:
         channel: 'stable'
         cache: true
 
-    - name: Initialize Project Structure & Dependencies
+    - name: Clean Setup and Inject Code
       run: |
+        # إنشاء مشروع فلاتر نظيف بالكامل مع دعم الأندرويد
         flutter create . --org com.tradesync --project-name tradesync_ai --platforms=android
+        
+        # إضافة حزمة الخطوط المطلوبة وتحديث الحزم
         flutter pub add google_fonts:^6.1.0
         flutter pub get
 
