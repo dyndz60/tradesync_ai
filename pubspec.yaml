@@ -1,10 +1,12 @@
 name: tradesync_ai
-description: TradeSync AI Mobile App with Arabic RTL and Supabase support.
+description: TradeSync AI - Professional Import/Export Platform for Algerian Self-Entrepreneurs
 publish_to: 'none'
+
 version: 1.0.0+1
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
+  flutter: '>=3.16.0'
 
 dependencies:
   flutter:
@@ -12,11 +14,38 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   flutter_riverpod: ^2.5.1
+  riverpod_annotation: ^2.1.0
   supabase_flutter: ^2.5.0
   google_fonts: ^6.1.0
   intl: ^0.20.3
+  image_picker: ^1.0.0
+  permission_handler: ^11.4.0
+  url_launcher: ^6.2.0
+  uuid: ^4.0.0
+  cupertino_icons: ^1.0.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.0
+  build_runner: ^2.4.0
+  riverpod_generator: ^2.3.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/icons/
+    - assets/illustrations/
+
+  fonts:
+    - family: Poppins
+      fonts:
+        - asset: assets/fonts/Poppins-Regular.ttf
+        - asset: assets/fonts/Poppins-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Poppins-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Poppins-Medium.ttf
+          weight: 500
