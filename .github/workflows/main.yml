@@ -24,13 +24,9 @@ jobs:
         channel: 'stable'
         cache: true
 
-    - name: Create fresh Flutter project structure
+    - name: Create project and get packages
       run: |
         flutter create . --org com.tradesync --project-name tradesync_ai --platforms=android
-
-    - name: Fix intl dependency and Get packages
-      run: |
-        flutter pub add intl:^0.20.3
         flutter pub get
 
     - name: Build APK Release
