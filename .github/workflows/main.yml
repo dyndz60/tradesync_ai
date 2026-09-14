@@ -24,9 +24,13 @@ jobs:
         channel: 'stable'
         cache: true
 
-    - name: Create project and get packages
+    - name: Create Structure & Force Fix Main
       run: |
+        # إنشاء هيكل الأندرويد وفلاتر النظيف
         flutter create . --org com.tradesync --project-name tradesync_ai --platforms=android
+        
+        # التأكد من جلب حزمة google_fonts والـ intl الصحيحة
+        flutter pub add google_fonts:^6.1.0
         flutter pub get
 
     - name: Build APK Release
