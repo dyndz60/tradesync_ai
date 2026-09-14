@@ -9,16 +9,35 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
-    - name: Setup Flutter
+    - name: Set up Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+
+    - name: Set up Flutter
       uses: subosito/flutter-action@v2
       with:
-        flutter-version: '3.16.0'
+        channel: 'stable'
+        cache: true
 
-    - name: Get dependencies
-      run: flutter pub get
+    - name: Create fresh Flutter project structure
+      run: |
+        flutter create . --org com.tradesync --project-name tradesync_ai --platforms=android
+        
+    - name: Overwrite with our custom lib and pubspec
+      run: |
+        # سيتم دمج الملفات التي أنشأتها مسبقاً تلقائياً، دعنا نضمن جلب الحزم
+        flutter pub get
 
-    - name: Build APK
+    - name: Build APK Release
       run: flutter build apk --release
-      
+
+    - name: Upload APK artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: tradesync-ai-apk
+        path: build/app/outputs/flutter-apk/app-release.apk
