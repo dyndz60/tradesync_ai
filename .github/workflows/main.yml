@@ -27,10 +27,10 @@ jobs:
     - name: Create fresh Flutter project structure
       run: |
         flutter create . --org com.tradesync --project-name tradesync_ai --platforms=android
-        
-    - name: Overwrite with our custom lib and pubspec
+
+    - name: Fix intl dependency and Get packages
       run: |
-        # سيتم دمج الملفات التي أنشأتها مسبقاً تلقائياً، دعنا نضمن جلب الحزم
+        flutter pub add intl:^0.20.3
         flutter pub get
 
     - name: Build APK Release
