@@ -1,22 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'themes/app_theme.dart';
-import 'models/app_models.dart';
+import 'providers/app_providers.dart';
 import 'screens/splash_screen.dart';
 import 'screens/auth_screen.dart';
 import 'screens/dashboard_screen.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // TODO: Initialize Supabase when credentials are available
-  // await Supabase.initialize(
-  //   url: 'YOUR_SUPABASE_URL',
-  //   anonKey: 'YOUR_SUPABASE_ANON_KEY',
-  // );
-  
+
+  await Supabase.initialize(
+    url: const String.fromEnvironment('SUPABASE_URL'),
+    anonKey: const String.fromEnvironment('SUPABASE_ANON_KEY'),
+  );
+
   runApp(
     const ProviderScope(
       child: TradesyncAiApp(),
@@ -29,8 +28,7 @@ class TradesyncAiApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isAuthenticated = ref.watch(userAuthProvider) != null;
-    final userRole = ref.watch(userRoleProvider);
+    final authState = ref.watch(authProvider);
 
     return MaterialApp(
       title: 'TradeSync AI',
@@ -51,9 +49,11 @@ class TradesyncAiApp extends ConsumerWidget {
           child: child ?? const SizedBox.shrink(),
         );
       },
-      home: isAuthenticated && userRole != null
-          ? const DashboardScreen()
-          : const SplashScreen(),
+      home: switch (authState.status) {
+        AuthStatus.unknown || AuthStatus.loading => const SplashScreen(),
+        AuthStatus.authenticated => const DashboardScreen(),
+        AuthStatus.unauthenticated || AuthStatus.error => const AuthScreen(),
+      },
     );
   }
 

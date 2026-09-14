@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/app_models.dart';
+import '../providers/app_providers.dart';
 import 'signup_screen.dart';
 import 'dashboard_screen.dart';
 
@@ -16,9 +17,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  String _selectedRole = 'retailBuyer';
+  String _selectedRole = 'importer';
   bool _isPhoneMode = false;
-  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -43,8 +43,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       }
     }
 
-    if (_passwordController.text.isEmpty || _passwordController.text.length < 6) {
-      _showError(isArabic ? 'كلمة المرور يجب أن تكون 6 أحرف على الأقل' : 'Password must be at least 6 characters');
+    if (_passwordController.text.isEmpty || _passwordController.text.length < 8) {
+      _showError(isArabic ? 'كلمة المرور يجب أن تكون 8 أحرف على الأقل' : 'Password must be at least 8 characters');
       return false;
     }
 
@@ -60,33 +60,41 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     );
   }
 
-  void _handleLogin() async {
-    if (!_validateInputs()) return;
+  Future<void> _handleLogin() async {
+    if (!_validateInputs()) {
+      return;
+    }
 
-    setState(() => _isLoading = true);
+    final identifier =
+        _isPhoneMode ? _phoneController.text : _emailController.text;
 
-    try {
-      // TODO: Implement actual Supabase authentication
-      // Mock authentication - replace with real Supabase call
-      await Future.delayed(const Duration(milliseconds: 800));
-
-      // Store auth state
-      final userIdentifier = _isPhoneMode ? _phoneController.text : _emailController.text;
-      ref.read(userAuthProvider.notifier).state = {
-        'identifier': userIdentifier,
-        'role': _selectedRole,
-      };
-      ref.read(userRoleProvider.notifier).state = _selectedRole;
-
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const DashboardScreen()),
+    await ref.read(authProvider.notifier).signIn(
+          identifier: identifier,
+          password: _passwordController.text,
         );
-      }
-    } catch (e) {
-      _showError('Login failed. Please try again.');
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+
+    if (!mounted) {
+      return;
+    }
+
+    final authState = ref.read(authProvider);
+    if (authState.isAuthenticated) {
+      // Keep the existing dashboard providers in sync for presentation only.
+      // Supabase/Riverpod authState remains the source of truth.
+      final user = authState.user!;
+      ref.read(userAuthProvider.notifier).state = <String, String>{
+        'identifier': identifier.trim(),
+        'role': user.role.value,
+      };
+      ref.read(userRoleProvider.notifier).state = user.role.value;
+
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => const DashboardScreen(),
+        ),
+      );
+    } else if (authState.message != null) {
+      _showError(authState.message!);
     }
   }
 
@@ -94,6 +102,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   Widget build(BuildContext context) {
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     final theme = Theme.of(context);
+    final isLoading = ref.watch(authProvider).isLoading;
 
     return Scaffold(
       appBar: AppBar(
@@ -276,13 +285,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                             style: GoogleFonts.poppins(),
                           ),
                         ),
-                        DropdownMenuItem(
-                          value: 'retailBuyer',
-                          child: Text(
-                            isArabic ? 'مشتري تجزئة' : 'Retail Buyer',
-                            style: GoogleFonts.poppins(),
-                          ),
-                        ),
                       ],
                       onChanged: (value) {
                         if (value != null) setState(() => _selectedRole = value);
@@ -297,8 +299,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _isLoading ? null : _handleLogin,
-                  child: _isLoading
+                  onPressed: isLoading ? null : _handleLogin,
+                  child: isLoading
                       ? SizedBox(
                           height: 20,
                           width: 20,

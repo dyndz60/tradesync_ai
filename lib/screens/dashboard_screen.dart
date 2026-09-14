@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/app_models.dart';
+import '../providers/app_providers.dart';
 import 'calculator_screen.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
@@ -17,7 +18,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
-    final userRole = ref.watch(userRoleProvider);
+    final userRole = ref.watch(authProvider).user?.role.value ??
+        ref.watch(userRoleProvider);
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -555,13 +557,13 @@ class MessagesTab extends StatelessWidget {
 }
 
 // Profile Tab
-class ProfileTab extends StatelessWidget {
+class ProfileTab extends ConsumerWidget {
   final bool isArabic;
 
   const ProfileTab({required this.isArabic});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
 
     return ListView(
@@ -649,12 +651,15 @@ class ProfileTab extends StatelessWidget {
             isArabic ? 'تسجيل الخروج' : 'Logout',
             style: const TextStyle(color: Colors.red),
           ),
-          onTap: () {
-            // Handle logout
-            Navigator.of(context).pushNamedAndRemoveUntil(
-              '/',
-              (route) => false,
-            );
+          onTap: () async {
+            await ref.read(authProvider.notifier).signOut();
+            if (context.mounted &&
+                ref.read(authProvider).status == AuthStatus.unauthenticated) {
+              Navigator.of(context).pushNamedAndRemoveUntil(
+                '/',
+                (route) => false,
+              );
+            }
           },
         ),
       ],

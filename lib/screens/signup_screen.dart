@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/app_models.dart';
+import '../models/app_user.dart';
+import '../providers/app_providers.dart';
 import 'dashboard_screen.dart';
 
 class SignupScreen extends ConsumerStatefulWidget {
@@ -18,8 +20,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
   
-  String _selectedRole = 'retailBuyer';
-  bool _isLoading = false;
+  String _selectedRole = 'importer';
   bool _agreedToTerms = false;
 
   @override
@@ -40,18 +41,18 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       return false;
     }
 
-    if (_emailController.text.isEmpty || !_emailController.text.contains('@')) {
-      _showError(isArabic ? 'بريد إلكتروني غير صحيح' : 'Invalid email');
+    if (_emailController.text.trim().isEmpty &&
+        _phoneController.text.trim().isEmpty) {
+      _showError(
+        isArabic
+            ? 'أدخل البريد الإلكتروني أو رقم الهاتف'
+            : 'Enter an email or phone number',
+      );
       return false;
     }
 
-    if (_phoneController.text.isEmpty || _phoneController.text.length < 8) {
-      _showError(isArabic ? 'رقم هاتف غير صحيح' : 'Invalid phone number');
-      return false;
-    }
-
-    if (_passwordController.text.isEmpty || _passwordController.text.length < 6) {
-      _showError(isArabic ? 'كلمة المرور يجب أن تكون 6 أحرف على الأقل' : 'Password must be at least 6 characters');
+    if (_passwordController.text.length < 8) {
+      _showError(isArabic ? 'كلمة المرور يجب أن تكون 8 أحرف على الأقل' : 'Password must be at least 8 characters');
       return false;
     }
 
@@ -77,44 +78,58 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     );
   }
 
-  void _handleSignup() async {
-    if (!_validateInputs()) return;
+  Future<void> _handleSignup() async {
+    if (!_validateInputs()) {
+      return;
+    }
 
-    setState(() => _isLoading = true);
+    final role = UserRoleX.tryParse(_selectedRole);
+    if (role == null) {
+      _showError('نوع الحساب غير صالح');
+      return;
+    }
 
-    try {
-      // TODO: Implement actual Supabase signup
-      await Future.delayed(const Duration(milliseconds: 800));
+    final identifier = _emailController.text.trim().isNotEmpty
+        ? _emailController.text
+        : _phoneController.text;
 
-      // Store auth state
-      ref.read(userAuthProvider.notifier).state = {
-        'email': _emailController.text,
-        'name': _nameController.text,
-        'role': _selectedRole,
+    await ref.read(authProvider.notifier).signUp(
+          identifier: identifier,
+          password: _passwordController.text,
+          role: role,
+          isAutoEntrepreneur: false,
+          phone: _phoneController.text,
+        );
+
+    if (!mounted) {
+      return;
+    }
+
+    final authState = ref.read(authProvider);
+    if (authState.isAuthenticated) {
+      final user = authState.user!;
+      ref.read(userAuthProvider.notifier).state = <String, String>{
+        'email': _emailController.text.trim(),
+        'name': _nameController.text.trim(),
+        'role': user.role.value,
       };
-      ref.read(userRoleProvider.notifier).state = _selectedRole;
+      ref.read(userRoleProvider.notifier).state = user.role.value;
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              Localizations.localeOf(context).languageCode == 'ar'
-                  ? 'تم إنشاء الحساب بنجاح'
-                  : 'Account created successfully',
-              style: GoogleFonts.poppins(),
-            ),
-            backgroundColor: Colors.green,
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => const DashboardScreen(),
+        ),
+      );
+    } else if (authState.message != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            authState.message!,
+            style: GoogleFonts.poppins(),
           ),
-        );
-
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const DashboardScreen()),
-        );
-      }
-    } catch (e) {
-      _showError('Signup failed. Please try again.');
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+          backgroundColor: Colors.green,
+        ),
+      );
     }
   }
 
@@ -122,6 +137,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   Widget build(BuildContext context) {
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     final theme = Theme.of(context);
+    final isLoading = ref.watch(authProvider).isLoading;
 
     return Scaffold(
       appBar: AppBar(
@@ -216,13 +232,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                         style: GoogleFonts.poppins(),
                       ),
                     ),
-                    DropdownMenuItem(
-                      value: 'retailBuyer',
-                      child: Text(
-                        isArabic ? 'مشتري تجزئة' : 'Retail Buyer',
-                        style: GoogleFonts.poppins(),
-                      ),
-                    ),
                   ],
                   onChanged: (value) {
                     if (value != null) setState(() => _selectedRole = value);
@@ -288,8 +297,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _isLoading ? null : _handleSignup,
-                  child: _isLoading
+                  onPressed: isLoading ? null : _handleSignup,
+                  child: isLoading
                       ? SizedBox(
                           height: 20,
                           width: 20,
