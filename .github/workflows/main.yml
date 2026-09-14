@@ -24,8 +24,11 @@ jobs:
         channel: 'stable'
         cache: true
 
-    - name: Get packages
-      run: flutter pub get
+    - name: Initialize Project Structure & Dependencies
+      run: |
+        flutter create . --org com.tradesync --project-name tradesync_ai --platforms=android
+        flutter pub add google_fonts:^6.1.0
+        flutter pub get
 
     - name: Build APK Release
       run: flutter build apk --release
