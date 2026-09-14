@@ -18,9 +18,8 @@ class TradeSyncApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.indigo,
         scaffoldBackgroundColor: const Color(0xFFF8FAFC),
-        textTheme: GoogleFonts.tajawalTextTheme(Theme.of(context)),
+        textTheme: GoogleFonts.tajawalTextTheme(),
       ),
-      // دعم اللغة العربية واتجاه الشاشة من اليمين لليسار (RTL)
       builder: (context, child) {
         return Directionality(
           textDirection: TextDirection.rtl,
@@ -44,11 +43,10 @@ const List<String> algerianWilayas = [
   '36 - الطارف', '37 - تندوف', '38 - تيسمسيلت', '39 - الوادي', '40 - خنشلة',
   '41 - سوق أهراس', '42 - تيبازة', '43 - ميلة', '44 - عين الدفلى', '45 - النعامة',
   '46 - عين تموشنت', '47 - غرداية', '48 - غليزان', '49 - المغير', '50 - المنيعة',
-  '51 - أولاد جلال', '52 - برج باجي مختار', '53 - بني عباس', '54 - تنظوف',
+  '51 - أولاد جلال', '52 - برج باجي مختار', '53 - بني عباس', '54 - تندوف',
   '55 - توقرت', '56 - جانت', '57 - المغير', '58 - منعة'
 ];
 
-// شاشة التسجيل بالبريد ورقم الهاتف الجزائري
 class AuthScreen extends StatefulWidget {
   const AuthScreen({Key? key}) : super(key: key);
 
@@ -76,8 +74,8 @@ class _AuthScreenState extends State<AuthScreen> {
             children: [
               const SizedBox(height: 20),
               Text(
-                'منصة المقاولين الذاتي المستوردين',
-                style: GoogleFonts.tajawal(
+                'منصة المقاولين الذاتيين المستوردين',
+                style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
                   color: Colors.indigo.shade800,
@@ -132,7 +130,6 @@ class _AuthScreenState extends State<AuthScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 15),
                 ),
                 onPressed: () {
-                  // الانتقال إلى لوحة التحكم أو عرض المنتجات
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
@@ -153,7 +150,6 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 }
 
-// صفحة استعراض السلع بالجملة
 class ProductsFeedScreen extends StatelessWidget {
   const ProductsFeedScreen({Key? key}) : super(key: key);
 
@@ -177,7 +173,7 @@ class ProductsFeedScreen extends StatelessWidget {
         ],
       ),
       body: ListView.builder(
-        itemCount: 3, // عينة تجريبية
+        itemCount: 3,
         itemBuilder: (context, index) {
           return Card(
             margin: const EdgeInsets.all(10),
@@ -203,7 +199,7 @@ class ProductsFeedScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 8),
-                  const Text('الحد الأدنى للطلب: 10 قطع | التوصيل: متوفر لـ 58 ولاية'),
+                  const Text('الحد الأدنى للطلب: 10 قطع | التوصيل: متوفر للـ 58 ولاية'),
                   const SizedBox(height: 10),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
@@ -234,7 +230,6 @@ class ProductsFeedScreen extends StatelessWidget {
   }
 }
 
-// شاشة إضافة منتج جديد (خاصة بالمقاول الذاتي) مع اختيار ولايات التوصيل
 class AddProductScreen extends StatefulWidget {
   const AddProductScreen({Key? key}) : super(key: key);
 
