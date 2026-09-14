@@ -24,13 +24,8 @@ jobs:
         channel: 'stable'
         cache: true
 
-    - name: Prepare project structure and get packages
-      run: |
-        # إنشاء المشروع بالاسم المناسب
-        flutter create . --org com.tradesync --project-name tradesync_ai --platforms=android
-        
-        # التأكد من جلب التبعيات المحدثة
-        flutter pub get
+    - name: Get packages
+      run: flutter pub get
 
     - name: Build APK Release
       run: flutter build apk --release
