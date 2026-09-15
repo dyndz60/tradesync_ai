@@ -1,666 +1,250 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../models/app_models.dart';
-import '../providers/app_providers.dart';
-import 'calculator_screen.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
-  const DashboardScreen({Key? key}) : super(key: key);
+  final String userRole;
+  const DashboardScreen({Key? key, required this.userRole}) : super(key: key);
 
   @override
   ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
 }
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
-  int _selectedTabIndex = 0;
+  int _currentIndex = 0;
 
   @override
   Widget build(BuildContext context) {
-    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
-    final userRole = ref.watch(authProvider).user?.role.value ??
-        ref.watch(userRoleProvider);
     final theme = Theme.of(context);
+    final List<Widget> screens = [
+      _buildCollaborationFeed(theme),
+      _buildMarketplaceFeed(theme),
+      _buildProfileScreen(theme),
+    ];
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'TradeSync AI',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.account_circle),
-            onPressed: () {
-              // Navigate to profile
-            },
-          ),
+      body: screens[_currentIndex],
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _currentIndex,
+        onDestinationSelected: (index) => setState(() => _currentIndex = index),
+        indicatorColor: theme.colorScheme.secondary.withOpacity(0.3),
+        destinations: const [
+          NavigationDestination(icon: Icon(Icons.handshake_outlined), selectedIcon: Icon(Icons.handshake), label: 'الشراكات'),
+          NavigationDestination(icon: Icon(Icons.storefront_outlined), selectedIcon: Icon(Icons.storefront), label: 'السوق'),
+          NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'حسابي'),
         ],
       ),
-      body: IndexedStack(
-        index: _selectedTabIndex,
+    );
+  }
+
+  // 1. Collaboration & Matching Logic Tab
+  Widget _buildCollaborationFeed(ThemeData theme) {
+    // Dynamically show the opposite of the user's role to match them
+    final isLookingForInvestors = widget.userRole == 'importer';
+
+    return CustomScrollView(
+      slivers: [
+        SliverAppBar(
+          title: Text(isLookingForInvestors ? 'شركاء سيولة متاحون' : 'مستوردون متاحون (بالكيلو)', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+          floating: true,
+          centerTitle: true,
+        ),
+        SliverPadding(
+          padding: const EdgeInsets.all(16.0),
+          sliver: SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                if (isLookingForInvestors) {
+                  return _buildInvestorCard(theme);
+                } else {
+                  return _buildImporterCard(theme, index);
+                }
+              },
+              childCount: 4, // Mock dynamic list
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildImporterCard(ThemeData theme, int index) {
+    final locations = ['الصين (Guangzhou)', 'تركيا (Istanbul)', 'الإمارات (Dubai)', 'مصر (Cairo)'];
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                CircleAvatar(backgroundColor: theme.primaryColor, child: const Icon(Icons.flight_takeoff, color: Colors.white)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('مسافر / مستورد موثوق', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16)),
+                      Text('متواجد في: ${locations[index % 4]}', style: GoogleFonts.poppins(color: Colors.grey[600], fontSize: 12)),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(color: theme.colorScheme.tertiary.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
+                  child: Text('المقاول الذاتي', style: GoogleFonts.poppins(color: theme.colorScheme.tertiary, fontSize: 10, fontWeight: FontWeight.bold)),
+                ),
+              ],
+            ),
+            const Divider(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _infoColumn('السعة المتاحة', '150 كغ', theme),
+                _infoColumn('عمولة الاستيراد', '1200 دج/كغ', theme, highlight: true),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () {},
+                    style: ElevatedButton.styleFrom(backgroundColor: theme.colorScheme.secondary),
+                    icon: const Icon(Icons.handshake, color: Colors.white),
+                    label: Text('طلب شراكة', style: GoogleFonts.poppins(color: Colors.white)),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  onPressed: () {},
+                  icon: Icon(Icons.chat, color: theme.primaryColor),
+                  style: IconButton.styleFrom(side: BorderSide(color: theme.primaryColor.withOpacity(0.2))),
+                )
+              ],
+            )
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInvestorCard(ThemeData theme) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                CircleAvatar(backgroundColor: theme.colorScheme.secondary, child: const Icon(Icons.monetization_on, color: Colors.white)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('شريك سيولة / مستثمر', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16)),
+                      Text('الجزائر العاصمة', style: GoogleFonts.poppins(color: Colors.grey[600], fontSize: 12)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const Divider(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _infoColumn('السيولة المتاحة', '500,000 دج - 2,000,000 دج', theme, highlight: true),
+                _infoColumn('المجال', 'إلكترونيات، ملابس', theme),
+              ],
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () {},
+                icon: const Icon(Icons.chat_bubble_outline),
+                label: Text('بدء محادثة للتمويل', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+              ),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 2. Traditional Wholesale Marketplace Tab
+  Widget _buildMarketplaceFeed(ThemeData theme) {
+    return Scaffold(
+      appBar: AppBar(title: Text('سوق الجملة', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)), centerTitle: true),
+      body: Center(child: Text('تغذية المنتجات تأتي هنا (Products Feed)', style: GoogleFonts.poppins(color: Colors.grey))),
+    );
+  }
+
+  // 3. User Profile & Verification Tab
+  Widget _buildProfileScreen(ThemeData theme) {
+    return SafeArea(
+      child: ListView(
+        padding: const EdgeInsets.all(24.0),
         children: [
-          // Marketplace Feed
-          MarketplaceFeedTab(isArabic: isArabic, userRole: userRole),
-          
-          // Collaboration Matching
-          CollaborationMatchingTab(isArabic: isArabic, userRole: userRole),
-          
-          // Calculator
-          const CalculatorScreen(),
-          
-          // Chat/Messages
-          MessagesTab(isArabic: isArabic),
-          
-          // Profile
-          ProfileTab(isArabic: isArabic),
-        ],
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedTabIndex,
-        onTap: (index) => setState(() => _selectedTabIndex = index),
-        items: [
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.storefront),
-            label: isArabic ? 'السوق' : 'Marketplace',
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.people),
-            label: isArabic ? 'شركاء' : 'Partners',
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.calculate),
-            label: isArabic ? 'حاسبة' : 'Calculator',
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.chat),
-            label: isArabic ? 'رسائل' : 'Messages',
-          ),
-          BottomNavigationBarItem(
-            icon: const Icon(Icons.person),
-            label: isArabic ? 'الملف' : 'Profile',
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// Marketplace Feed Tab
-class MarketplaceFeedTab extends StatelessWidget {
-  final bool isArabic;
-  final String? userRole;
-
-  const MarketplaceFeedTab({
-    required this.isArabic,
-    this.userRole,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return ListView(
-      padding: const EdgeInsets.all(12),
-      children: [
-        // Header
-        Text(
-          isArabic ? 'سوق الاستيراد' : 'Import Marketplace',
-          style: theme.textTheme.headlineSmall,
-        ),
-        const SizedBox(height: 16),
-
-        // Sample Import Listings
-        _buildImportCard(
-          context: context,
-          title: isArabic ? 'الملابس من تركيا' : 'Clothing from Turkey',
-          supplier: 'Ahmed Mohammed',
-          location: 'تركيا - Turkey',
-          pricePerKg: 45.50,
-          minimumKg: 50,
-          commission: 80,
-          image: '👔',
-          isArabic: isArabic,
-          theme: theme,
-        ),
-        const SizedBox(height: 12),
-        _buildImportCard(
-          context: context,
-          title: isArabic ? 'إلكترونيات من الصين' : 'Electronics from China',
-          supplier: 'Fatima Chen',
-          location: 'الصين - China',
-          pricePerKg: 120.00,
-          minimumKg: 100,
-          commission: 150,
-          image: '📱',
-          isArabic: isArabic,
-          theme: theme,
-        ),
-        const SizedBox(height: 12),
-        _buildImportCard(
-          context: context,
-          title: isArabic ? 'مواد غذائية من مصر' : 'Food from Egypt',
-          supplier: 'Mohammed Samir',
-          location: 'مصر - Egypt',
-          pricePerKg: 25.00,
-          minimumKg: 200,
-          commission: 40,
-          image: '🍞',
-          isArabic: isArabic,
-          theme: theme,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildImportCard({
-    required BuildContext context,
-    required String title,
-    required String supplier,
-    required String location,
-    required double pricePerKg,
-    required int minimumKg,
-    required double commission,
-    required String image,
-    required bool isArabic,
-    required ThemeData theme,
-  }) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Text(image, style: const TextStyle(fontSize: 40)),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: theme.textTheme.labelLarge,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        supplier,
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+          CircleAvatar(radius: 50, backgroundColor: theme.primaryColor, child: const Icon(Icons.person, size: 50, color: Colors.white)),
+          const SizedBox(height: 16),
+          Center(
+            child: Text(
+              widget.userRole == 'importer' ? 'مستورد مسافر' : 'مستثمر محلي',
+              style: GoogleFonts.poppins(fontSize: 18, color: theme.colorScheme.secondary, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                const Icon(Icons.location_on, size: 16, color: Colors.grey),
-                const SizedBox(width: 4),
-                Text(location, style: GoogleFonts.poppins(fontSize: 12)),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          ),
+          const SizedBox(height: 32),
+          Card(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: theme.primaryColor.withOpacity(0.2))),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  Row(
                     children: [
-                      Text(
-                        isArabic ? 'السعر/كيلو' : 'Price/kg',
-                        style: GoogleFonts.poppins(fontSize: 11),
-                      ),
-                      Text(
-                        '${pricePerKg.toStringAsFixed(2)} USD',
-                        style: GoogleFonts.poppins(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      ),
+                      Icon(Icons.badge, color: theme.primaryColor),
+                      const SizedBox(width: 8),
+                      Text('توثيق المقاول الذاتي', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold)),
                     ],
                   ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        isArabic ? 'الحد الأدنى' : 'Min',
-                        style: GoogleFonts.poppins(fontSize: 11),
-                      ),
-                      Text(
-                        '$minimumKg kg',
-                        style: GoogleFonts.poppins(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        isArabic ? 'العمولة' : 'Commission',
-                        style: GoogleFonts.poppins(fontSize: 11),
-                      ),
-                      Text(
-                        '${commission.toStringAsFixed(0)} دج',
-                        style: GoogleFonts.poppins(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                          color: theme.colorScheme.primary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    icon: const Icon(Icons.chat),
-                    label: Text(isArabic ? 'محادثة' : 'Chat'),
-                    onPressed: () {},
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.check_circle),
-                    label: Text(isArabic ? 'اهتمام' : 'Interested'),
-                    onPressed: () {},
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// Collaboration Matching Tab
-class CollaborationMatchingTab extends StatelessWidget {
-  final bool isArabic;
-  final String? userRole;
-
-  const CollaborationMatchingTab({
-    required this.isArabic,
-    this.userRole,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return ListView(
-      padding: const EdgeInsets.all(12),
-      children: [
-        // Header
-        Text(
-          isArabic ? 'البحث عن شركاء' : 'Find Partners',
-          style: theme.textTheme.headlineSmall,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          isArabic
-              ? 'ابحث عن شركاء يناسبون احتياجاتك'
-              : 'Find partners that match your needs',
-          style: GoogleFonts.poppins(color: Colors.grey[600], fontSize: 12),
-        ),
-        const SizedBox(height: 16),
-
-        // Filter Section
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                icon: const Icon(Icons.filter_list),
-                label: Text(isArabic ? 'تصفية' : 'Filter'),
-                onPressed: () {},
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: OutlinedButton.icon(
-                icon: const Icon(Icons.search),
-                label: Text(isArabic ? 'بحث' : 'Search'),
-                onPressed: () {},
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-
-        // Partner Cards
-        _buildPartnerCard(
-          context: context,
-          name: 'علي محمد',
-          role: isArabic ? 'مستورد من تركيا' : 'Importer from Turkey',
-          badge: '✓ Verified',
-          commission: 100,
-          capacity: 500,
-          location: 'تركيا',
-          image: '👨‍💼',
-          isArabic: isArabic,
-          theme: theme,
-        ),
-        const SizedBox(height: 12),
-        _buildPartnerCard(
-          context: context,
-          name: 'فاطمة حسن',
-          role: isArabic ? 'شريك استثماري' : 'Investment Partner',
-          badge: '✓ Verified',
-          commission: 150000,
-          capacity: 1000,
-          location: 'الجزائر',
-          image: '👩‍💼',
-          isArabic: isArabic,
-          theme: theme,
-        ),
-        const SizedBox(height: 12),
-        _buildPartnerCard(
-          context: context,
-          name: 'محمد صادق',
-          role: isArabic ? 'مسافر من الإمارات' : 'Traveler from UAE',
-          badge: '✓ Verified',
-          commission: 200,
-          capacity: 2000,
-          location: 'الإمارات',
-          image: '✈️',
-          isArabic: isArabic,
-          theme: theme,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPartnerCard({
-    required BuildContext context,
-    required String name,
-    required String role,
-    required String badge,
-    required double commission,
-    required int capacity,
-    required String location,
-    required String image,
-    required bool isArabic,
-    required ThemeData theme,
-  }) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Text(image, style: const TextStyle(fontSize: 50)),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              name,
-                              style: theme.textTheme.labelLarge,
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.tertiary.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              badge,
-                              style: GoogleFonts.poppins(
-                                fontSize: 10,
-                                color: theme.colorScheme.tertiary,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        role,
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                const Icon(Icons.location_on, size: 16, color: Colors.grey),
-                const SizedBox(width: 4),
-                Text(location, style: GoogleFonts.poppins(fontSize: 12)),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        isArabic ? 'العمولة' : 'Commission',
-                        style: GoogleFonts.poppins(fontSize: 11),
-                      ),
-                      Text(
-                        commission < 1000
-                            ? '${commission.toStringAsFixed(0)} دج/kg'
-                            : '${(commission / 1000).toStringAsFixed(0)}k دج',
-                        style: GoogleFonts.poppins(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        isArabic ? 'السعة' : 'Capacity',
-                        style: GoogleFonts.poppins(fontSize: 11),
-                      ),
-                      Text(
-                        '$capacity kg',
-                        style: GoogleFonts.poppins(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(width: 8),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    icon: const Icon(Icons.chat),
-                    label: Text(isArabic ? 'محادثة' : 'Message'),
-                    onPressed: () {},
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.handshake),
-                    label: Text(isArabic ? 'تعاون' : 'Collaborate'),
-                    onPressed: () {},
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// Messages Tab
-class MessagesTab extends StatelessWidget {
-  final bool isArabic;
-
-  const MessagesTab({required this.isArabic});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Text(
-        isArabic ? 'الرسائل قريباً' : 'Messages Coming Soon',
-        style: GoogleFonts.poppins(),
-      ),
-    );
-  }
-}
-
-// Profile Tab
-class ProfileTab extends ConsumerWidget {
-  final bool isArabic;
-
-  const ProfileTab({required this.isArabic});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        // Profile Header
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.account_circle,
-                    size: 60,
-                    color: theme.colorScheme.primary,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'أحمد محمد',
-                  style: theme.textTheme.headlineSmall,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  isArabic ? 'مستورد من تركيا' : 'Importer from Turkey',
-                  style: GoogleFonts.poppins(color: Colors.grey[600]),
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.tertiary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    '✓ Verified Self-Entrepreneur',
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      color: theme.colorScheme.tertiary,
-                      fontWeight: FontWeight.w600,
+                  const SizedBox(height: 12),
+                  Text('ارفع نسخة من بطاقتك لزيادة الموثوقية لدى الشركاء.', style: GoogleFonts.poppins(fontSize: 12)),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () {},
+                      icon: const Icon(Icons.upload_file),
+                      label: Text('رفع البطاقة', style: GoogleFonts.poppins()),
                     ),
-                  ),
-                ),
-              ],
+                  )
+                ],
+              ),
             ),
           ),
-        ),
-        const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
 
-        // Settings
-        ListTile(
-          leading: const Icon(Icons.edit),
-          title: Text(isArabic ? 'تعديل الملف' : 'Edit Profile'),
-          onTap: () {},
-        ),
-        ListTile(
-          leading: const Icon(Icons.security),
-          title: Text(isArabic ? 'الأمان' : 'Security'),
-          onTap: () {},
-        ),
-        ListTile(
-          leading: const Icon(Icons.settings),
-          title: Text(isArabic ? 'الإعدادات' : 'Settings'),
-          onTap: () {},
-        ),
-        ListTile(
-          leading: const Icon(Icons.help),
-          title: Text(isArabic ? 'المساعدة' : 'Help'),
-          onTap: () {},
-        ),
-        const Divider(),
-        ListTile(
-          leading: const Icon(Icons.logout, color: Colors.red),
-          title: Text(
-            isArabic ? 'تسجيل الخروج' : 'Logout',
-            style: const TextStyle(color: Colors.red),
+  Widget _infoColumn(String label, String value, ThemeData theme, {bool highlight = false}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[600])),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+            color: highlight ? theme.colorScheme.secondary : Colors.black,
           ),
-          onTap: () async {
-            await ref.read(authProvider.notifier).signOut();
-            if (context.mounted &&
-                ref.read(authProvider).status == AuthStatus.unauthenticated) {
-              Navigator.of(context).pushNamedAndRemoveUntil(
-                '/',
-                (route) => false,
-              );
-            }
-          },
         ),
       ],
     );
