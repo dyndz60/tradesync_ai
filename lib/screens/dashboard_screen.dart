@@ -37,9 +37,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  // 1. Collaboration & Matching Logic Tab
   Widget _buildCollaborationFeed(ThemeData theme) {
-    // Dynamically show the opposite of the user's role to match them
     final isLookingForInvestors = widget.userRole == 'importer';
 
     return CustomScrollView(
@@ -60,7 +58,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   return _buildImporterCard(theme, index);
                 }
               },
-              childCount: 4, // Mock dynamic list
+              childCount: 4, 
             ),
           ),
         ),
@@ -175,7 +173,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  // 2. Traditional Wholesale Marketplace Tab
   Widget _buildMarketplaceFeed(ThemeData theme) {
     return Scaffold(
       appBar: AppBar(title: Text('سوق الجملة', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)), centerTitle: true),
@@ -183,7 +180,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  // 3. User Profile & Verification Tab
   Widget _buildProfileScreen(ThemeData theme) {
     return SafeArea(
       child: ListView(
