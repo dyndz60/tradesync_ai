@@ -2,11 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // تهيئة الاتصال بـ Supabase باستخدام المفتاح والرابط الحقيقيين
+  await Supabase.initialize(
+    url: 'https://zcpfuxmjcctuhtjipokx.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjcGZ1eG1qY2N0dWh0amlwb2t4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0NDA1MjcsImV4cCI6MjEwNTAxNjUyN30.qKabIQ0LLgc8Ze5TVV2A-ASoVZUl6-t9G72cDp-Qt1E',
+  );
+
   runApp(const ProviderScope(child: TradesyncAiApp()));
 }
+
+final supabase = Supabase.instance.client;
 
 class TradesyncAiApp extends StatelessWidget {
   const TradesyncAiApp({Key? key}) : super(key: key);
@@ -85,56 +95,67 @@ class AuthScreen extends ConsumerStatefulWidget {
 
 class _AuthScreenState extends ConsumerState<AuthScreen> {
   final _emailController = TextEditingController();
-  final _phoneController = TextEditingController();
   String _selectedRole = 'importer'; 
-  bool _isPhoneMode = false;
-  bool _isLogin = true; 
+  bool _isLoading = false;
 
-  void _handleAuthentication() {
-    final input = _isPhoneMode ? _phoneController.text.trim() : _emailController.text.trim();
-    if (input.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('الرجاء إدخال بيانات صحيحة', style: GoogleFonts.poppins())));
+  Future<void> _handleAuth() async {
+    final email = _emailController.text.trim();
+    if (email.isEmpty || !email.contains('@')) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('الرجاء إدخال بريد إلكتروني صحيح')));
       return;
     }
-    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => DashboardScreen(userRole: _selectedRole)));
+
+    setState(() => _isLoading = true);
+    try {
+      await supabase.auth.signUp(
+        email: email,
+        password: 'TemporaryPassword123!',
+        data: {'role': _selectedRole},
+      );
+      
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => DashboardScreen(userRole: _selectedRole)),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ في الاتصال: $e')));
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(_isLogin ? 'تسجيل الدخول' : 'إنشاء حساب', style: GoogleFonts.poppins(fontWeight: FontWeight.bold))),
+      appBar: AppBar(title: Text('تسجيل الحساب', style: GoogleFonts.poppins(fontWeight: FontWeight.bold))),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
         child: Column(
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                TextButton(onPressed: () => setState(() => _isLogin = true), child: Text('تسجيل الدخول', style: GoogleFonts.poppins(fontWeight: _isLogin ? FontWeight.bold : FontWeight.normal))),
-                TextButton(onPressed: () => setState(() => _isLogin = false), child: Text('إنشاء حساب', style: GoogleFonts.poppins(fontWeight: !_isLogin ? FontWeight.bold : FontWeight.normal))),
-              ],
-            ),
-            const SizedBox(height: 24),
             TextField(
-              controller: _isPhoneMode ? _phoneController : _emailController,
-              decoration: InputDecoration(hintText: _isPhoneMode ? '+213 555...' : 'البريد الإلكتروني', prefixIcon: Icon(_isPhoneMode ? Icons.phone : Icons.email), border: OutlineInputBorder(borderRadius: BorderRadius.circular(8))),
-              keyboardType: _isPhoneMode ? TextInputType.phone : TextInputType.emailAddress,
+              controller: _emailController,
+              decoration: InputDecoration(hintText: 'البريد الإلكتروني', prefixIcon: const Icon(Icons.email), border: OutlineInputBorder(borderRadius: BorderRadius.circular(8))),
+              keyboardType: TextInputType.emailAddress,
             ),
-            const SizedBox(height: 16),
-            TextButton(onPressed: () => setState(() => _isPhoneMode = !_isPhoneMode), child: Text(_isPhoneMode ? 'استخدام البريد الإلكتروني بدلاً من ذلك' : 'استخدام رقم الهاتف بدلاً من ذلك')),
             const SizedBox(height: 24),
-            if (!_isLogin) ...[
-              DropdownButtonFormField<String>(
-                value: _selectedRole,
-                decoration: InputDecoration(border: OutlineInputBorder(borderRadius: BorderRadius.circular(8))),
-                items: const [DropdownMenuItem(value: 'importer', child: Text('مستورد / مسافر')), DropdownMenuItem(value: 'investor', child: Text('شريك / مستثمر'))],
-                onChanged: (val) => setState(() => _selectedRole = val!),
-              ),
-              const SizedBox(height: 32),
-            ],
+            DropdownButtonFormField<String>(
+              value: _selectedRole,
+              decoration: InputDecoration(border: OutlineInputBorder(borderRadius: BorderRadius.circular(8))),
+              items: const [
+                DropdownMenuItem(value: 'importer', child: Text('مستورد / مسافر')),
+                DropdownMenuItem(value: 'investor', child: Text('شريك / مستثمر')),
+              ],
+              onChanged: (val) => setState(() => _selectedRole = val!),
+            ),
+            const SizedBox(height: 32),
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton(onPressed: _handleAuthentication, style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).primaryColor, padding: const EdgeInsets.symmetric(vertical: 16)), child: Text(_isLogin ? 'دخول' : 'تأكيد الحساب', style: GoogleFonts.poppins(color: Colors.white, fontSize: 16))),
+              child: ElevatedButton(
+                onPressed: _isLoading ? null : _handleAuth,
+                style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).primaryColor, padding: const EdgeInsets.symmetric(vertical: 16)),
+                child: _isLoading 
+                  ? const CircularProgressIndicator(color: Colors.white) 
+                  : Text('تأكيد الحساب عبر Supabase', style: GoogleFonts.poppins(color: Colors.white, fontSize: 16)),
+              ),
             ),
           ],
         ),
@@ -143,62 +164,15 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   }
 }
 
-class DashboardScreen extends ConsumerStatefulWidget {
+class DashboardScreen extends StatelessWidget {
   final String userRole;
   const DashboardScreen({Key? key, required this.userRole}) : super(key: key);
-  @override
-  ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
-}
-
-class _DashboardScreenState extends ConsumerState<DashboardScreen> {
-  int _currentIndex = 0;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final List<Widget> screens = [_buildCollaborationFeed(theme), _buildMarketplaceFeed(), _buildProfileScreen(theme)];
-
     return Scaffold(
-      body: screens[_currentIndex],
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: (index) => setState(() => _currentIndex = index),
-        indicatorColor: theme.colorScheme.secondary.withOpacity(0.3),
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.handshake_outlined), selectedIcon: Icon(Icons.handshake), label: 'الشراكات'),
-          NavigationDestination(icon: Icon(Icons.storefront_outlined), selectedIcon: Icon(Icons.storefront), label: 'السوق'),
-          NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'حسابي'),
-        ],
-      ),
+      appBar: AppBar(title: Text('لوحة التحكم - ${userRole == 'importer' ? 'مستورد' : 'مستثمر'}', style: GoogleFonts.poppins(fontWeight: FontWeight.bold))),
+      body: const Center(child: Text('تم الاتصال بقاعدة البيانات بنجاح! 🎉')),
     );
   }
-
-  Widget _buildCollaborationFeed(ThemeData theme) {
-    return CustomScrollView(
-      slivers: [
-        SliverAppBar(title: Text('الشركاء المتاحون', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)), floating: true, centerTitle: true),
-        SliverPadding(padding: const EdgeInsets.all(16.0), sliver: SliverList(delegate: SliverChildBuilderDelegate((context, index) => _buildCard(theme), childCount: 3))),
-      ],
-    );
-  }
-
-  Widget _buildCard(ThemeData theme) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Row(children: [CircleAvatar(backgroundColor: theme.primaryColor, child: const Icon(Icons.person, color: Colors.white)), const SizedBox(width: 12), Text('شريك محتمل', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16))]),
-            const SizedBox(height: 16),
-            ElevatedButton.icon(onPressed: () {}, icon: const Icon(Icons.handshake), label: Text('طلب شراكة', style: GoogleFonts.poppins()))
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMarketplaceFeed() => Scaffold(appBar: AppBar(title: Text('السوق', style: GoogleFonts.poppins(fontWeight: FontWeight.bold))), body: const Center(child: Text('السوق قيد التطوير')));
-
-  Widget _buildProfileScreen(ThemeData theme) => SafeArea(child: Center(child: Text('حسابي', style: GoogleFonts.poppins(fontSize: 24))));
 }
