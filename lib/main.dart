@@ -7,7 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // تهيئة الاتصال بـ Supabase باستخدام المفتاح والرابط الحقيقيين
+  // تهيئة الاتصال بـ Supabase باستخدام مفتاح الـ anon العام والآمن فقط
   await Supabase.initialize(
     url: 'https://zcpfuxmjcctuhtjipokx.supabase.co',
     anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjcGZ1eG1qY2N0dWh0amlwb2t4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0NDA1MjcsImV4cCI6MjEwNTAxNjUyN30.qKabIQ0LLgc8Ze5TVV2A-ASoVZUl6-t9G72cDp-Qt1E',
