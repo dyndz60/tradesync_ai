@@ -1,49 +1,36 @@
 name: tradesync_ai
-description: TradeSync AI - Professional Import/Export Platform for Algerian Self-Entrepreneurs
+description: منصة الشراكة وتجارة الجملة للمقاول الذاتي الجزائري
 publish_to: 'none'
 
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.12.0
-  flutter: ">=3.35.0"
+  sdk: '>=3.0.0 <4.0.0'
 
 dependencies:
   flutter:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
-  flutter_riverpod: ^3.4.3
-  shared_preferences: ^2.5.5
-  supabase_flutter: ^2.17.2
-  google_fonts: ^6.1.0
-  intl: ^0.20.3
-  image_picker: ^1.0.0
-  permission_handler: ^11.4.0
-  url_launcher: ^6.2.0
-  uuid: ^4.0.0
-  cupertino_icons: ^1.0.0
+  
+  # واجهة المستخدم والأيقونات
+  cupertino_icons: ^1.0.6
+  google_fonts: ^6.2.1
+  
+  # إدارة الحالة (State Management)
+  flutter_riverpod: ^2.5.1
+  
+  # قاعدة البيانات (معطلة حالياً حتى نقوم بربطها)
+  # supabase_flutter: ^2.4.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^6.0.0
+  flutter_lints: ^3.0.0
 
 flutter:
   uses-material-design: true
-
-  assets:
-    - assets/images/
-    - assets/icons/
-    - assets/illustrations/
-
-  fonts:
-    - family: Poppins
-      fonts:
-        - asset: assets/fonts/Poppins-Regular.ttf
-        - asset: assets/fonts/Poppins-Bold.ttf
-          weight: 700
-        - asset: assets/fonts/Poppins-SemiBold.ttf
-          weight: 600
-        - asset: assets/fonts/Poppins-Medium.ttf
-          weight: 500
+  
+  # قم بإزالة علامة # أدناه إذا أضفت مجلد صور لاحقاً
+  # assets:
+  #   - assets/images/
