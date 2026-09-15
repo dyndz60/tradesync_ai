@@ -2,16 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'screens/dashboard_screen.dart';
+import 'dashboard_screen.dart'; // مسار استيراد مباشر معدل
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // TODO: Supabase Initialization
-  // await Supabase.initialize(
-  //   url: 'YOUR_SUPABASE_URL',
-  //   anonKey: 'YOUR_SUPABASE_ANON_KEY',
-  // );
   
   runApp(
     const ProviderScope(
@@ -28,11 +22,11 @@ class TradesyncAiApp extends StatelessWidget {
     return MaterialApp(
       title: 'TradeSync AI',
       theme: ThemeData(
-        primaryColor: const Color(0xFF1A3A52), // Deep Slate Blue
+        primaryColor: const Color(0xFF1A3A52), 
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFF1A3A52),
-          secondary: const Color(0xFFD4AF37), // Professional Gold
-          tertiary: const Color(0xFF10B981), // Emerald Success
+          secondary: const Color(0xFFD4AF37), 
+          tertiary: const Color(0xFF10B981), 
         ),
         useMaterial3: true,
         textTheme: GoogleFonts.poppinsTextTheme(Theme.of(context).textTheme),
@@ -49,7 +43,7 @@ class TradesyncAiApp extends StatelessWidget {
       ],
       builder: (context, child) {
         return Directionality(
-          textDirection: TextDirection.rtl, // RTL Enforced for Arabic
+          textDirection: TextDirection.rtl, 
           child: child ?? const SizedBox.shrink(),
         );
       },
@@ -87,7 +81,6 @@ class WelcomeScreen extends StatelessWidget {
               const SizedBox(height: 64),
               ElevatedButton(
                 onPressed: () {
-                  // Navigate directly to AuthScreen (Fixes the loop)
                   Navigator.of(context).pushReplacement(
                     MaterialPageRoute(builder: (context) => const AuthScreen()),
                   );
@@ -120,9 +113,9 @@ class AuthScreen extends ConsumerStatefulWidget {
 class _AuthScreenState extends ConsumerState<AuthScreen> {
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
-  String _selectedRole = 'importer'; // Importer or Investor
+  String _selectedRole = 'importer'; 
   bool _isPhoneMode = false;
-  bool _isLogin = true; // Toggle between Login and Signup
+  bool _isLogin = true; 
 
   @override
   void dispose() {
@@ -132,7 +125,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   }
 
   void _handleAuthentication() {
-    // 1. Basic Frontend Validation (Note: Always validate securely on the backend/Supabase as well)
     final input = _isPhoneMode ? _phoneController.text.trim() : _emailController.text.trim();
     if (input.isEmpty || (_isPhoneMode && input.length < 9) || (!_isPhoneMode && !input.contains('@'))) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -141,8 +133,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       return;
     }
 
-    // 2. State update & Secure Routing Fix (Prevents bypass)
-    // In a real scenario, wait for Supabase auth response here before pushing the route.
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (context) => DashboardScreen(userRole: _selectedRole)),
     );
@@ -159,7 +149,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Toggle Login / Signup
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -174,7 +163,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
               ],
             ),
             const SizedBox(height: 24),
-            // Input Fields
             TextField(
               controller: _isPhoneMode ? _phoneController : _emailController,
               decoration: InputDecoration(
@@ -190,7 +178,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
               child: Text(_isPhoneMode ? 'استخدام البريد الإلكتروني بدلاً من ذلك' : 'استخدام رقم الهاتف بدلاً من ذلك'),
             ),
             const SizedBox(height: 24),
-            // Role Selection (Crucial for Business Logic)
             if (!_isLogin) ...[
               Text('اختر دورك في المنصة:', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
               const SizedBox(height: 8),
